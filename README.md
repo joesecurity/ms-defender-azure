@@ -12,7 +12,7 @@ The connector will enrich your Microsoft Defender Alerts with Joe Sandbox analys
 ## Solution Overview
 - The connector is built using Azure logic app, Azure functions app and Azure Storage.
   1. Azure Logic app `SubmitDefenderAlertsToJoeSandbox` monitors the alerts from MS Defender as soon any AV/EDR alerts are generated. If any AV/EDR alert is found, it will send the alert details to the Azure function app `JoeSandboxDefender`.
-  2. Azure function app `JoeSanboxDefender` checks if the alert contains a file and checks if the file hash has already been analyzed by Joe Sandbox.
+  2. Azure function app `JoeSandboxDefender` checks if the alert contains a file and checks if the file hash has already been analyzed by Joe Sandbox.
   3. If the hash was already analysed, the system checks if user configure to reanalyse the hash in configuration step, if yes it resubmits that to Joe Sandbox to reanalyze, if not it skips re-examining it.
   4. Azure function app `JoeSandboxDefender` requests the file from Microsoft Defender by starting a live response session.
   5. Microsoft Defender starts a live response session that run PowerShell code on the endpoint. The PowerShell moves the files out of quarantine to a temporary folder before sending to Azure storage(joesandbox-defender-quarantine-files) container. 
