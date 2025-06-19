@@ -1,7 +1,7 @@
 ![solution_overview](Images/integration.png)
 # Microsoft Defender for Endpoint Azure Connector for Joe Sandbox
 
-**Latest Version:** 1.0.0 - **Release Date:** 19-06-205
+**Latest Version:** 1.0.0 - **Release Date:** 19-06-2025
 
 ## Overview
 
