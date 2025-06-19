@@ -204,7 +204,7 @@ To improve alert enrichment, set the remediation action to "Quarantine: Moves fi
 
 - Click on below button to deploy:
 
-  [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FRamboV%2FJoeSecurity_Azure%2Frefs%2Fheads%2Fmain%2FLogicApp%2Fazuredeploy.json)
+  [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com2Fjoesecurity%2Fms-defender-azure%2Frefs%2Fheads%2Fmain%2FLogicApp%2Fazuredeploy.json)
 
 - On the next page, provide the appropriate `Subscription` and `Resource group` and click on `Review & create`.
 
