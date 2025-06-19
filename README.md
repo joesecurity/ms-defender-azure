@@ -1,7 +1,7 @@
 ![solution_overview](Images/integration.png)
 # Microsoft Defender for Endpoint Azure Connector for Joe Sandbox
 
-**Latest Version:** 1.0.0 - **Release Date:** 
+**Latest Version:** 1.0.0 - **Release Date:** 19-06-205
 
 ## Overview
 
@@ -35,7 +35,7 @@ To improve alert enrichment, set the remediation action to "Quarantine: Moves fi
 - Microsoft Azure
   1. Azure functions with Flex Consumption plan.
      Reference: https://learn.microsoft.com/en-us/azure/azure-functions/flex-consumption-plan
-	 **Note: Flex Consumption plans are not available in all regions, please check if the region your are deploying the function is supported, if not we suggest you to deploy the function app with premium plan. **
+	 **Note**: Flex Consumption plans are not available in all regions, please check if the region your are deploying the function is supported, if not we suggest you to deploy the function app with premium plan. **
 	 Reference: https://learn.microsoft.com/en-us/azure/azure-functions/flex-consumption-how-to?tabs=azure-cli%2Cvs-code-publish&pivots=programming-language-python#view-currently-supported-regions
   2. Azure functions Premium plan.
 	 Reference: https://learn.microsoft.com/en-us/azure/azure-functions/functions-premium-plan
@@ -271,7 +271,7 @@ To improve alert enrichment, set the remediation action to "Quarantine: Moves fi
 
     
 ## Debugging
-- To debug and check logs after receiving an email, follow these steps:
+- To debug and check logs, follow these steps:
   1. Navigate to the Azure Function App.
   2. Select the function that starts with "JoeSandboxDefender".
   3. In the Function section below, choose "JoeSandboxDefender".
@@ -290,4 +290,4 @@ To improve alert enrichment, set the remediation action to "Quarantine: Moves fi
 
 | Version        | Release Date | Release Notes
 |:---------------|:-------------|:---------------- |
-| 1.0.0          | `26-05-2025` | <ul><li>Initial Release</li></ul> |
+| 1.0.0          | `19-06-2025` | <ul><li>Initial Release</li></ul> |
