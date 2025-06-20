@@ -266,6 +266,11 @@ To improve alert enrichment, set the remediation action to "Quarantine: Moves fi
 
 ![defender_disable](Images/defender_disable.png)
 
+## Microsoft Defender Alert Joe Sandbox Enrichment Sample Images
+![defender_alert_01](Images/defender_alert_01.png)
+![defender_aleert_02](Images/defender_alert_02.png)
+
+
 ## Expected Issues With LogicApps
 - Logic App `SubmitDefenderAlertsToJoeSandbox` runs will fail after 2 minutes. This is a expected behaviour and is not an issue.
 
