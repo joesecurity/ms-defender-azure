@@ -2,9 +2,9 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "metadata": {
-        "title": "Submit Microsoft Defender EDR/AV Alerts to JoeSanbox",
+        "title": "Submit Microsoft Defender EDR/AV Alerts to JoeSandbox",
         "description": "This playbook runs when a Microsoft Defender alert is generated.",
-        "prerequisites": "JoeSanbox Defender Function App",
+        "prerequisites": "JoeSandbox Defender Function App",
         "prerequisitesDeployTemplateFile": "../FunctionApp/azuredeploy.json",
         "postDeploymentSteps": ["None"],
         "lastUpdateTime": "2025-06-22T00:00:00.000Z",
@@ -26,7 +26,7 @@
             }
         },
         "FunctionAppName": {
-            "defaultValue": "JoeSanboxDefender",
+            "defaultValue": "JoeSandboxDefender",
             "type": "string",
             "metadata": {
                 "description": "Name of the FunctionApp"
@@ -274,7 +274,7 @@
                             "actions": {
                                 "Check_Alert_Severity": {
                                     "actions": {
-                                        "Call-JoeSanbox-Function": {
+                                        "Call-JoeSandbox-Function": {
                                             "limit": {
                                                 "timeout": "PT5M"
                                             },
@@ -287,7 +287,7 @@
 						    "threat_family": "@body('Alerts_-_Get_single_alert')['threatFamilyName']"
                                                 },
                                                 "function": {
-                                                    "id": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Web/sites/', variables('Functionappname'), '/functions/JoeSecurityMSDefender')]"
+                                                    "id": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Web/sites/', variables('Functionappname'), '/functions/JoeSandboxMSDefender')]"
                                                 },
                                                 "retryPolicy": {
                                                     "type": "none"
