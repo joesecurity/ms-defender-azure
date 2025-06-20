@@ -268,7 +268,7 @@ To improve alert enrichment, set the remediation action to "Quarantine: Moves fi
 
 ## Microsoft Defender Alert Joe Sandbox Enrichment Sample Images
 ![defender_alert_01](Images/defender_alert_01.png)
-![defender_aleert_02](Images/defender_alert_02.png)
+![defender_alert_02](Images/defender_alert_02.png)
 
 
 ## Expected Issues With LogicApps
