@@ -14,7 +14,7 @@ from typing import Any, Generator
 from jbxapi import JoeException, JoeSandbox as JoeAPI
 
 from ..const import JOE_CONFIG
-from .Models import Machine
+from .defender_models import Machine
 
 
 class JoeSandbox:

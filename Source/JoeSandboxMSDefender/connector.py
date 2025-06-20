@@ -18,8 +18,8 @@ from .const import (
     JOE_CONFIG,
 )
 from .lib.joesandbox import JoeSandbox
-from .lib.MicrosoftDefender import MicrosoftDefender
-from .lib.Models import Evidence, Machine
+from .lib.microsoft_defender import MicrosoftDefender
+from .lib.defender_models import Evidence, Machine
 
 
 def group_evidences_by_machines(evidences: dict) -> list:
