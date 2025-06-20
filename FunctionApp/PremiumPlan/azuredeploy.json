@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "functionAppName": {
-      "defaultValue": "JoeSanboxDefender",
+      "defaultValue": "JoeSandboxDefender",
       "minLength": 1,
       "maxLength": 20,
       "type": "string"
@@ -75,9 +75,9 @@
         "description": "Migrate Classic Application Insights to Log Analytic Workspace which is retiring by 29 Febraury 2024. Use 'Log Analytic Workspace-->Properties' blade having 'Resource ID' property value. This is a fully qualified resourceId which is in format '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.OperationalInsights/workspaces/{workspaceName}'"
       }
     },
-    "JoeSanboxAPIKey": {
+    "JoeSandboxAPIKey": {
       "type": "securestring",
-      "defaultValue": "<JoeSanbox API Key>",
+      "defaultValue": "<JoeSandbox API Key>",
       "minLength": 1,
 	  "metadata": {
         "description": "Enter the Joe Sandbox Api Key."
@@ -90,21 +90,21 @@
         "description": "If true, the files will be resubmitted to Joe Sandbox, even if the file hash was found in Joe Sandbox."
       }
     },
-    "JoeSanboxAPIRetryTimeout": {
+    "JoeSandboxAPIRetryTimeout": {
       "type": "int",
       "defaultValue": 5,
 	  "metadata": {
         "description": "Provide maximum time to wait in minutes, when Joe Sandbox API is not responding."
       }
     },
-    "JoeSanboxAPIMaxRetry": {
+    "JoeSandboxAPIMaxRetry": {
       "type": "int",
       "defaultValue": 3,
       "metadata": {
         "description": "Provide number of retries, when Joe Sandbox API is not responding."
       }
     },
-    "JoeSanboxAnalysisJobTimeout": {
+    "JoeSandboxAnalysisJobTimeout": {
       "type": "int",
       "defaultValue": 30,
       "metadata": {
@@ -272,24 +272,24 @@
               "value": "[variables('storageAccountName')]"
             },
             {
-              "name": "JoeSanboxAPIKey",
-              "value": "[parameters('JoeSanboxAPIKey')]"
+              "name": "JoeSandboxAPIKey",
+              "value": "[parameters('JoeSandboxAPIKey')]"
             },
             {
               "name": "JoeSandboxResubmit",
               "value": "[parameters('JoeSandboxResubmit')]"
             },
             {
-              "name": "JoeSanboxAPIMaxRetry",
-              "value": "[parameters('JoeSanboxAPIMaxRetry')]"
+              "name": "JoeSandboxAPIMaxRetry",
+              "value": "[parameters('JoeSandboxAPIMaxRetry')]"
             },
             {
-              "name": "JoeSanboxAPIRetryTimeout",
-              "value": "[parameters('JoeSanboxAPIRetryTimeout')]"
+              "name": "JoeSandboxAPIRetryTimeout",
+              "value": "[parameters('JoeSandboxAPIRetryTimeout')]"
             },
             {
-              "name": "JoeSanboxAnalysisJobTimeout",
-              "value": "[parameters('JoeSanboxAnalysisJobTimeout')]"
+              "name": "JoeSandboxAnalysisJobTimeout",
+              "value": "[parameters('JoeSandboxAnalysisJobTimeout')]"
             },
             {
               "name": "MachineAvailabilityTimeout",
