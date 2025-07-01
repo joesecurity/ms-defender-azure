@@ -151,6 +151,7 @@ To improve alert enrichment, set the remediation action to "Quarantine: Moves fi
 | Azure Storage Connection String| Please leave this empty                                                                            |
 | Azure Storage Account Key| Please leave this empty                                                                            |
 | App Insights Workspace Resource ID | Go to `Log Analytics workspace` -> `Settings` -> `Properties`, Copy `Resource ID` and paste here   |
+| JoeSandbox Base URL | JoeSandbox Base URL.                                                                                      |
 | JoeSandbox API Key | JoeSandbox API Key                                                                                      |
 | JoeSandbox Resubmit | If true, the files will be resubmitted to JoeSandbox analyser, even if the file hash was found in JoeSandbox |
 | JoeSandbox API Retry Timeout | Provide maximum time to wait in minutes, when JoeSandbox API is not responding                          |
