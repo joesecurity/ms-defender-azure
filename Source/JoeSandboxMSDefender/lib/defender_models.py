@@ -4,7 +4,7 @@ Models
 
 from base64 import b64encode
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Optional
 
 
 @dataclass
@@ -36,6 +36,8 @@ class Evidence:
     detection_source: str
     url: str
     entity_type: str
+    joe_analysis: list = field(default_factory=list)
+    downloaded_file_data: Optional[bytes] = None
     live_response: LiveResponse = field(default_factory=LiveResponse)
     comments: set[str] = field(default_factory=set)
     submissions: list = field(default_factory=list)

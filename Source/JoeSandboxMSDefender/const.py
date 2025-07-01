@@ -49,19 +49,24 @@ class JoeConfig:
     RESUBMIT: bool
     JOE_API_RETRIES: int
     JOE_API_TIMEOUT: int
-    URL: str = "https://jbxcloud.joesecurity.org/api/"
+    BASE_URL: str
+    API_URL: str = ""
     CONNECTOR_NAME: str = "MicrosoftDefenderForEndpointConnectorAzureFunction"
     API_KEY_TYPE: str = "Sandbox"
     SSL_VERIFY: bool = True
     ACCEPT_TAC: bool = True
-    ANALYSIS_URL: str = "https://jbxcloud.joesecurity.org"
     RESUBMISSION_VERDICTS: list[str] = field(
-        default_factory=lambda: ["malicious", "suspicious", "clean", "unknown"]
+        default_factory=lambda: ["malicious", "suspicious", "clean"]
     )
+
+    def __post_init__(self):
+        self.BASE_URL = self.BASE_URL.rstrip("/")
+        self.API_URL = f"{self.BASE_URL}/api"
 
 
 JOE_CONFIG = JoeConfig(
     API_KEY=environ.get("JoeSandboxAPIKey", ""),
+    BASE_URL=environ.get("JoeSandboxBaseURL", "https://jbxcloud.joesecurity.org"),
     ANALYSIS_JOB_TIMEOUT=int(environ.get("JoeSandboxAnalysisJobTimeout", 30)) * 60,
     RESUBMIT=str_to_bool(environ.get("JoeSandboxResubmit", "True")),
     JOE_API_RETRIES=int(environ.get("JoeSandboxAPIMaxRetry", 5)),

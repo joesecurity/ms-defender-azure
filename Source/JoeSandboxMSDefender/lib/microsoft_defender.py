@@ -814,7 +814,6 @@ class MicrosoftDefender:
                 self.log.info("Downloading evidence %s" % evidence.sha256)
 
                 try:
-                    # Download file as a streaming response
                     response = self.retry_request(
                         method="GET",
                         url=evidence.live_response.download_url,
@@ -830,7 +829,7 @@ class MicrosoftDefender:
                             with GzipFile(
                                 fileobj=compressed_data, mode="rb"
                             ) as decompressed:
-                                evidence.download_file_path = decompressed.read()
+                                evidence.downloaded_file_data = decompressed.read()
                                 self.log.info(
                                     "Evidence %s decompressed successfully"
                                     % evidence.sha256
@@ -877,7 +876,7 @@ class MicrosoftDefender:
 
         comment += (
             "Analysis Url: "
-            + JOE_CONFIG.ANALYSIS_URL
+            + JOE_CONFIG.BASE_URL
             + "/analysis/%s\n" % sample_data["analysisid"]
         )
 

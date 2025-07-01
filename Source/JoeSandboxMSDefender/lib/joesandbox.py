@@ -11,7 +11,9 @@ from io import BytesIO
 from time import sleep
 from typing import Any, Generator
 
-from jbxapi import JoeException, JoeSandbox as JoeAPI
+from jbxapi import ConnectionError, InvalidApiKeyError, InvalidParameterError
+from jbxapi import JoeSandbox as JoeAPI
+from jbxapi import PermissionError, ServerOfflineError
 
 from ..const import JOE_CONFIG
 from .defender_models import Machine
@@ -25,7 +27,7 @@ class JoeSandbox:
 
     def __init__(self, log):
         """
-        Initialize, authenticate and healthcheck the JoeSandbox instance,
+        Initialize, authenticate the JoeSandbox instance,
         use JoeSandboxConfig as configuration
         :param log: logger instance
         :return void
@@ -35,57 +37,53 @@ class JoeSandbox:
         self.config = JOE_CONFIG
 
         self.authenticate()
-        self.healthcheck()
-
-    def healthcheck(self):
-        """
-        Healtcheck for JoeSandbox REST API, uses system_info endpoint
-        :raise: When healtcheck error occured during the connection wih REST API
-        :return: boolean status of JoeSandbox REST API
-        """
-
-        try:
-            self.api.server_info()
-            self.log.info("JoeSandbox Healthcheck is successfully.")
-            return True
-        except Exception as err:
-            self.log.error("Healthcheck failed. Error: %s" % (err))
-            raise
 
     def authenticate(self):
         """
-        Authenticate the JoeSandbox REST API
-        :raise: When API Key is not properly configured
-        :return: void
+        Authenticate and verify the JoeSandbox REST API connection.
+        :raises: Various exceptions if connection or config is invalid.
         """
         try:
             self.api = JoeAPI(
-                apiurl=self.config.URL,
+                apiurl=self.config.API_URL,
                 apikey=self.config.API_KEY,
                 verify_ssl=self.config.SSL_VERIFY,
                 user_agent=self.config.CONNECTOR_NAME,
                 accept_tac=self.config.ACCEPT_TAC,
-                retries=JOE_CONFIG.JOE_API_RETRIES,
-                timeout=JOE_CONFIG.JOE_API_TIMEOUT,
+                retries=self.config.JOE_API_RETRIES,
+                timeout=self.config.JOE_API_TIMEOUT,
             )
+            self.api.server_online()
             self.log.info(
-                "Successfully authenticated the JoeSandbox %s API"
-                % self.config.API_KEY_TYPE
+                "Successfully authenticated and verified JoeSandbox %s API",
+                self.config.API_KEY_TYPE,
             )
+        except InvalidApiKeyError as inerr:
+            self.log.error("Invalid API key for JoeSandbox: %s", inerr)
+            raise
+        except PermissionError as perr:
+            self.log.error("The user does not have the required permissions: %s", perr)
+            raise
+        except ConnectionError as cerr:
+            self.log.error("Failed to connect to JoeSandbox server: %s", cerr)
+            raise
+        except ServerOfflineError as serr:
+            self.log.error("Joe Sandbox is offline: %s", serr)
+            raise
         except Exception as err:
-            self.log.error(err)
+            self.log.error("Unexpected error during JoeSandbox authentication: %s", err)
             raise
 
     def get_analysis(self, query: str) -> list | None:
         """
-        Fetch the analysis associated with a particular SHA-256 hash from JoeSandbox.
+        Fetch the analysis associated based on a given query (hash or url) from JoeSandbox.
 
         Args:
-            query (str): The SHA-256 hash of the file or resource for which the analysis
+            query (str): The SHA-256 hash of the file or url for which the analysis
             is being requested.
 
         Returns:
-            dict or None: A dictionary containing the analysis result if found, or None
+            list or None: A list of analysis metadata matching the hash value, or None
             if no analysis is available or the operation fails.
         """
         try:
@@ -93,12 +91,10 @@ class JoeSandbox:
             if response:
                 self.log.info("Analysis for %s retrieved from JoeSandbox", query)
                 return response
-        except JoeException as jerr:
-            self.log.error(
-                "Analysis for %s couldn't be found in JoeSandbox database. Error: %s",
-                query,
-                jerr,
-            )
+        except InvalidParameterError as inperr:
+            self.log.error("An API parameter is invalid.. Error: %s", inperr)
+        except ConnectionError as cerr:
+            self.log.error("Failed to connect to JoeSandbox server.. Error: %s", cerr)
         except Exception as err:
             self.log.error(
                 "Unexpected error while retrieving analysis for %s: %s", query, err
@@ -106,14 +102,12 @@ class JoeSandbox:
 
         return None
 
-    def get_analysis_info(self, web_id: str) -> list | None:
+    def get_analysis_info(self, web_id: str) -> dict | None:
         """
-        Fetch the analysis associated with a particular SHA-256 hash from JoeSandbox.
+        Fetch the analysis associated with a particular web_id from JoeSandbox.
 
         Args:
-            web_id (str): The SHA-256 hash of the file or resource for which the analysis
-            is being requested.
-
+            web_id (str): The web id of the analysis.
         Returns:
             dict or None: A dictionary containing the analysis result if found, or None
             if no analysis is available or the operation fails.
@@ -123,24 +117,43 @@ class JoeSandbox:
             if response:
                 self.log.info("Analysis retrieved from JoeSandbox")
                 return response
-        except JoeException as jerr:
+        except InvalidParameterError as inperr:
+            self.log.error("An API parameter is invalid... Error: %s", inperr)
+        except ConnectionError as cerr:
             self.log.error(
-                "Analysis couldn't be found in JoeSandbox database. Error: %s",
-                jerr,
+                "Failed to connect to JoeSandbox server while fetching analysis info.. Error: %s",
+                cerr,
             )
         except Exception as err:
             self.log.error("Unexpected error while retrieving analysis: %s", err)
 
         return None
 
-    def parse_sample_data(self, sample: list | dict | None) -> dict:
+    def parse_analysis_data(self, analysis: list[dict] | dict | None) -> dict:
         """
-        Parse and extract summary data about the sample with keys below
-        :param sample: list object which contains raw data about the sample
-        :return sample_data: dict objects which contains parsed data about the sample
+        Extracts relevant metadata from a JoeSandbox analysis result.
+
+        Args:
+            analysis (list[dict] | dict | None): A list of analysis metadata dictionaries, or a single one.
+
+        Returns:
+            dict: A dictionary containing extracted metadata, or empty if detection is 'unknown' or input is invalid.
         """
-        sample_data = {}
-        keys = [
+        if not analysis:
+            return {}
+        if isinstance(analysis, list):
+            analysis_data = max(analysis, key=lambda x: x.get("score", 0))
+        elif isinstance(analysis, dict):
+            analysis_data = analysis
+        else:
+            self.log.warning("Invalid analysis input type: %s", type(analysis))
+            return {}
+
+        if analysis_data.get("detection", "").lower() == "unknown":
+            self.log.warning("Analysis detection is 'unknown'. Ignoring this analysis.")
+            return {}
+
+        keys_to_extract = [
             "webid",
             "detection",
             "threatname",
@@ -150,49 +163,10 @@ class JoeSandbox:
             "score",
             "analysisid",
         ]
-        if sample:
-            if isinstance(sample, list):
-                high_score_sample = max(sample, key=lambda x: x.get("score", 0))
-            else:
-                high_score_sample = sample
-            for key in keys:
-                if key in high_score_sample:
-                    sample_data[key] = high_score_sample[key]
-        return sample_data
 
-    def submit_av_files(self, file_objects: list, threat_name: str) -> list:
-        """
-        Submit a list of antivirus files to an external service with associated parameters and logs the submission status.
-
-        Arguments:
-            file_objects (list[dict[str, IO]]): A list of dictionaries where each dictionary
-                maps a file hash (string) to a file-like object.
-            threat_name (str): A string representing the name of the detected threat. Can be None.
-
-        Returns:
-            list[dict[str, str]]: A list of dictionaries, each containing the submission ID of a
-                successfully uploaded file.
-
-        Raises:
-            This function does not explicitly raise exceptions but captures and logs errors
-            during file submission.
-
-        """
-        params = {"tags": ["MSDefender-AV-Alert", threat_name]}
-        submissions = []
-        for file_obj in file_objects:
-            try:
-                for _, file in file_obj.items():
-                    response = self.api.submit_sample(sample=file, params=params)
-                    if response:
-                        submissions.append(
-                            {"submission_id": response["submission_id"], "type": "File"}
-                        )
-                        self.log.debug("File %s submitted to JoeSandbox" % file.name)
-
-            except Exception as err:
-                self.log.error(err)
-        return submissions
+        return {
+            key: analysis_data[key] for key in keys_to_extract if key in analysis_data
+        }
 
     def get_av_submissions(self, machine: Machine, submissions: list) -> list:
         """
@@ -208,43 +182,73 @@ class JoeSandbox:
                         submission["evidence"] = machine.av_evidences[evidence]
         return submissions
 
-    def submit_edr_samples(self, evidences: list, threat_name: str) -> list:
+    def submit_files_to_joesandbox(
+        self, submission_items: list, threat_name: str, source_type: str = "AV"
+    ) -> list:
         """
-        Submit sample to JoeSandbox Sandbox to analyze
-        :param evidences: list of evidences which downloaded from Microsoft Defender for Endpoint
-        :param threat_name: Threat name
-        :return submissions: dict object which contains submission_id and sample_id
+        Function to submit files to JoeSandbox from AV or EDR alerts.
+
+        Args:
+            submission_items (list): List of file dicts (for AV) or evidence objects (for EDR).
+            threat_name (str): Name of the threat.
+            source_type (str): "AV" or "EDR" to determine the structure of input items and tagging.
+
+        Returns:
+            list: A list of dictionaries containing submission details.
         """
-        params = {"tags": ["MSDefender-EDR-Alert", threat_name]}
+        tag = f"MSDefender-{source_type}-Alert"
+        params = {"tags": [tag, threat_name]}
         submissions = []
 
-        for evidence in evidences:
+        for obj in submission_items:
             try:
-                file_obj = BytesIO(evidence.download_file_path)
-                file_obj.name = evidence.file_name
-                response = self.api.submit_sample(sample=file_obj, params=params)
-                if response:
-                    submissions.append(
-                        {
-                            "submission_id": response["submission_id"],
-                            "evidence": evidence,
-                            "sha256": evidence.sha256,
-                            "type": "File",
-                        }
-                    )
-                    self.log.debug("File %s submitted to JoeSandbox" % file_obj.name)
+                if source_type == "AV":
+                    for _, file in obj.items():
+                        response = self.api.submit_sample(sample=file, params=params)
+                        if response:
+                            submissions.append(
+                                {
+                                    "submission_id": response["submission_id"],
+                                    "type": "File",
+                                }
+                            )
+                            self.log.debug("File %s submitted to JoeSandbox", file.name)
+                elif source_type == "EDR":
+                    file_obj = BytesIO(obj.downloaded_file_data)
+                    file_obj.name = obj.file_name
+                    response = self.api.submit_sample(sample=file_obj, params=params)
+                    if response:
+                        submissions.append(
+                            {
+                                "submission_id": response["submission_id"],
+                                "evidence": obj,
+                                "sha256": obj.sha256,
+                                "type": "File",
+                            }
+                        )
+                        self.log.debug("File %s submitted to JoeSandbox", file_obj.name)
+            except PermissionError as perr:
+                self.log.error("Insufficient permissions for this API key: %s", perr)
+            except InvalidParameterError as inperr:
+                self.log.error("Invalid parameter in submission: %s", inperr)
+            except ConnectionError as cerr:
+                self.log.error("Connection to JoeSandbox failed: %s", cerr)
             except Exception as err:
-                self.log.error(err)
+                self.log.error("Unexpected error during submission: %s", err)
 
-        self.log.info("%d files submitted to JoeSandbox" % len(submissions))
+        self.log.info("%d files submitted to JoeSandbox", len(submissions))
         return submissions
 
     def submit_url(self, evidences: dict, threat_name: str) -> list:
         """
-        Submit URL to JoeSandbox
-        :param evidences: URL to submit
-        :param threat_name: Threat name
-        :return list of submissions
+        Function to submit urls to JoeSandbox from AV or EDR alerts.
+
+        Args:
+            evidences (list): List of evidence objects.
+            threat_name (str): Name of the threat.
+
+        Returns:
+            list: A list of dictionaries containing submission details.
         """
         submissions = []
         params = {"tags": ["MSDefender-URL-Alert", threat_name]}
@@ -262,6 +266,21 @@ class JoeSandbox:
                         }
                     )
                     self.log.debug("URL %s submitted to JoeSandbox" % url)
+            except PermissionError as perr:
+                self.log.error(
+                    "Insufficient permissions for this API key to submit urls: %s",
+                    perr,
+                )
+            except InvalidParameterError as inperr:
+                self.log.error(
+                    "An API parameter is invalid under url submission. Error: %s",
+                    inperr,
+                )
+            except ConnectionError as cerr:
+                self.log.error(
+                    "Failed to connect to JoeSandbox server while submitting urls. Error: %s",
+                    cerr,
+                )
             except Exception as err:
                 self.log.error(err)
         return submissions
@@ -313,7 +332,7 @@ class JoeSandbox:
                     ).seconds >= JOE_CONFIG.ANALYSIS_JOB_TIMEOUT:
                         submission_objects.remove(submission_object)
                         self.log.error(
-                            "Submission job %d exceeded the configured time threshold."
+                            "Submission job %s exceeded the configured time threshold."
                             % submission_object["submission_id"]
                         )
                         yield {
@@ -321,7 +340,11 @@ class JoeSandbox:
                             "response": response,
                             "submission": submission_object,
                         }
-
+                except InvalidParameterError as inperr:
+                    self.log.error(
+                        "An API parameter is invalid while getting analysis info. Error: %s",
+                        inperr,
+                    )
                 except Exception as err:
                     self.log.error(str(err))
                     if submission_object["error_count"] >= 5:

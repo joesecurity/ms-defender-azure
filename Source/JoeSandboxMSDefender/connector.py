@@ -11,15 +11,10 @@ from json import dumps
 import azure.functions as func
 from azure.storage.blob import BlobServiceClient
 
-from .const import (
-    ALERT,
-    DEFENDER_API,
-    SELECTED_VERDICTS,
-    JOE_CONFIG,
-)
+from .const import ALERT, DEFENDER_API, JOE_CONFIG, SELECTED_VERDICTS
+from .lib.defender_models import Machine
 from .lib.joesandbox import JoeSandbox
 from .lib.microsoft_defender import MicrosoftDefender
-from .lib.defender_models import Evidence, Machine
 
 
 def group_evidences_by_machines(evidences: dict) -> list:
@@ -65,8 +60,8 @@ def update_evidence_machine_ids(machines: list) -> list:
 
 def list_all_blob(machines: list) -> list:
     """
-    List all file(blob) uploaded by powershell scripts during the AV alerts,
-    returns list of file object and delete the blob from container.
+    List all file(blob) uploaded by PowerShell scripts during the AV alerts,
+    returns list of file objects and delete the blob from container.
     :param machines: Machine object
     """
     file_objects = []
@@ -121,12 +116,12 @@ def run(
     evidences = ms_defender.get_evidences(alert.get("id", ""))
 
     for key, evidence in evidences.items():
-        sample = joe_security.get_analysis(key)
-        if sample:
-            metadata = joe_security.parse_sample_data(sample)
+        analysis = joe_security.get_analysis(key)
+        if analysis:
+            metadata = joe_security.parse_analysis_data(analysis)
             if (
                 JOE_CONFIG.RESUBMIT
-                and metadata["detection"] in JOE_CONFIG.RESUBMISSION_VERDICTS
+                and metadata.get("detection") in JOE_CONFIG.RESUBMISSION_VERDICTS
             ):
                 log.info("Analysis results for %s exists in JoeSandbox.", key)
                 log.info(
@@ -144,7 +139,7 @@ def run(
                     " %s will not be resubmitted to JoeSandbox for analysis.",
                     key,
                 )
-                evidence.joe_sample = sample
+                evidence.joe_analysis = analysis
                 found_evidences[key] = evidence
         else:
             log.info("Analysis results for %s does not exist in JoeSandbox.", key)
@@ -159,9 +154,9 @@ def run(
         log.info("%d evidences found on JoeSandbox", len(found_evidences))
     if not JOE_CONFIG.RESUBMIT:
         for evidence in found_evidences.values():
-            sample_data = joe_security.parse_sample_data(evidence.joe_sample)
-            if sample_data["detection"] in SELECTED_VERDICTS:
-                enrich_alerts(ms_defender, evidence, sample_data)
+            analysis_data = joe_security.parse_analysis_data(evidence.joe_analysis)
+            if analysis_data["detection"] in SELECTED_VERDICTS:
+                ms_defender.enrich_alerts(evidence, analysis_data)
 
     download_file_evidences.update(resubmit_file_evidences)
     download_url_evidences.update(resubmit_url_evidences)
@@ -196,7 +191,7 @@ def process_file(
 ) -> list:
     """
     Process the EDR and AV alert file
-    :param download_evidences:  file to submit
+    :param download_evidences:  files to submit
     :param detection_source: Type of alert
     :param threat_name: Name of the threat
     :param ms_defender: MicrosoftDefender Object
@@ -220,7 +215,7 @@ def process_file(
             if machines:
                 file_objects = list_all_blob(machines)
                 if len(file_objects) > 0:
-                    submissions = joe_security.submit_av_files(
+                    submissions = joe_security.submit_files_to_joesandbox(
                         file_objects, threat_family
                     )
                     submissions_list.extend(
@@ -248,7 +243,9 @@ def process_file(
                 len(downloaded_evidences),
             )
             submissions_list.extend(
-                joe_security.submit_edr_samples(downloaded_evidences, threat_family)
+                joe_security.submit_files_to_joesandbox(
+                    downloaded_evidences, threat_family, "EDR"
+                )
             )
         else:
             log.info("EDR Alert: No file found to submit")
@@ -260,8 +257,8 @@ def process_url(
     download_evidences: dict, joe_security: JoeSandbox, threat_family: str
 ) -> list:
     """
-    Process URL
-    :param download_evidences: URL evidence
+    Process URLs
+    :param download_evidences: URL evidences
     :param joe_security: JoeSandbox Object
     :param threat_family: Threat family
     :return list
@@ -274,25 +271,13 @@ def process_url(
     return url_submission
 
 
-def enrich_alerts(
-    ms_defender: MicrosoftDefender, evidence: Evidence, sample_data: dict
-) -> None:
-    """
-    :param ms_defender: Microsoft Object
-    :param evidence: Evidences
-    :param sample_data: Sample Data
-    :return: None
-    """
-    ms_defender.enrich_alerts(evidence, sample_data)
-
-
 def process_submissions(
     joe_security: JoeSandbox, ms_defender: MicrosoftDefender, submissions: list
 ) -> None:
     """
     :param joe_security: JoeSecurity Object
     :param ms_defender: Microsoft Object
-    :param submissions: Child Sample ID
+    :param submissions: Submission list
     :return: None
     """
     for result in joe_security.wait_submissions(submissions):
@@ -300,11 +285,11 @@ def process_submissions(
         evidence = submission["evidence"]
 
         if result["finished"]:
-            sample = joe_security.get_analysis_info(result["analysis_id"])
-            sample_data = joe_security.parse_sample_data(sample)
+            analysis = joe_security.get_analysis_info(result["analysis_id"])
+            analysis_data = joe_security.parse_analysis_data(analysis)
 
-            if sample_data["detection"] in SELECTED_VERDICTS:
-                enrich_alerts(ms_defender, evidence, sample_data)
+            if analysis_data["detection"] in SELECTED_VERDICTS:
+                ms_defender.enrich_alerts(evidence, analysis_data)
 
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
