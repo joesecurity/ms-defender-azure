@@ -51,12 +51,20 @@
         "description": "Migrate Classic Application Insights to Log Analytic Workspace which is retiring by 29 Febraury 2024. Use 'Log Analytic Workspace-->Properties' blade having 'Resource ID' property value. This is a fully qualified resourceId which is in format '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.OperationalInsights/workspaces/{workspaceName}'"
       }
     },
+    "JoeSandboxBaseURL": {
+      "type": "string",
+      "defaultValue": "https://jbxcloud.joesecurity.org",
+      "minLength": 1,
+	  "metadata": {
+        "description": "Enter the Joe Sandbox API Base URL."
+      }
+    },
     "JoeSandboxAPIKey": {
       "type": "securestring",
       "defaultValue": "<JoeSandbox API Key>",
       "minLength": 1,
 	  "metadata": {
-        "description": "Enter the Joe Sandbox Api Key."
+        "description": "Enter the Joe Sandbox API Key."
       }
     },
     "JoeSandboxResubmit": {
@@ -246,6 +254,10 @@
             {
               "name": "StorageAccount",
               "value": "[variables('StorageAccount')]"
+            },
+             {
+              "name": "JoeSandboxBaseURL",
+              "value": "[parameters('JoeSandboxBaseURL')]"
             },
             {
               "name": "JoeSandboxAPIKey",
